@@ -1,0 +1,26 @@
+---
+XBeeUARTConfig:
+  baud_rate: 9600
+  data_bits: 8
+  stop_bits: 1
+  parity: 0
+
+RFModuleParameter:
+  guard_time:
+    at_name: GT
+    default_value: 0x3E8
+    second_units: 1000.0
+  command_mode_timeout:
+    at_name: CT
+    default_value: 0x64
+    second_units: 1000.0
+  command_character:
+    at_name: CC
+    default_value: +
+  node_discover_timeout:
+    at_name: NT
+    default_value: 0x82
+    second_units: 10.0
+  node_identifier:
+    at_name: NI
+    default_value: ' '

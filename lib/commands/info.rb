@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby -rubygems
 # == Synopsis
 # xbeeinfo.rb - A Ruby utility for extracting XBee setup information using xbee ruby class (Ruby::XBee)
 #
@@ -67,44 +66,41 @@
 # see Digi product manual: "Product Manual v1.xCx - 802.15.4 Protocol"
 # for details on the operation of XBee series 1 modules.
 
+module XBee
+  class XBeeCliApp < Thor
+    desc 'info [-b <baud_rate>]',
+      ''
+    shared_options
+    def info
+      # serial framing
+      xbee = XBee.new(options[:device], options[:baud_rate],
+                      options[:data_bits], options[:stop_bits],
+                      options[:parity])
 
-$: << File.dirname(__FILE__)
+      puts "Attention: #{xbee.attention}"
+      puts "Firmware: #{xbee.fw_rev}"
+      puts "Hardware: #{xbee.hw_rev}"
 
-require 'date'
-require 'ruby-xbee'
+      puts "Baud: #{xbee.baud}"
+      puts "Parity: #{xbee.parity}"
 
-STDIN.sync = 1
-STDOUT.sync = 1
-$stdin.sync = true
-$stdout.sync = true
+      puts "Neighbors:"
+      pp xbee.neighbors
 
-require 'pp'
+      puts "Node ID: #{xbee.node_id}"
+      puts "Channel: #{xbee.channel}"
+      puts "PAN ID: #{xbee.pan_id}"
+      puts "MY: #{xbee.my_src_address}"
+      puts "SH: #{xbee.serial_num_high}"
+      puts "SL: #{xbee.serial_num_low}"
+      puts "DH: #{xbee.destination_high}"
+      puts "DL: #{xbee.destination_low}"
+      puts "Last received signal strength (dBm): #{xbee.received_signal_strength}"
 
-@xbee = XBee.new( @xbee_usbdev_str, @xbee_baud, @data_bits, @stop_bits, @parity )
-
-puts "Attention: #{@xbee.attention}"
-puts "Firmware: #{@xbee.fw_rev}"
-puts "Hardware: #{@xbee.hw_rev}"
-
-puts "Baud: #{@xbee.baud}"
-puts "Parity: #{@xbee.parity}"
-
-puts "Neighbors:"
-pp @xbee.neighbors
-
-puts "Node ID: #{@xbee.node_id}"
-puts "Channel: #{@xbee.channel}"
-puts "PAN ID: #{@xbee.pan_id}"
-puts "MY: #{@xbee.my_src_address}"
-puts "SH: #{@xbee.serial_num_high}"
-puts "SL: #{@xbee.serial_num_low}"
-puts "DH: #{@xbee.destination_high}"
-puts "DL: #{@xbee.destination_low}"
-puts "Last received signal strength (dBm): #{@xbee.received_signal_strength}"
-
-0.upto(8) do | num |
-  portsym = "D#{num}".to_sym
-  puts "Port #{num}: #{@xbee.dio( portsym )}"
+      0.upto(8) do |num|
+        portsym = "D#{num}".to_sym
+        puts "Port #{num}: #{xbee.dio( portsym )}"
+      end
+    end
+  end
 end
-
-

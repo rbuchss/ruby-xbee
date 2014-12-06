@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby -rubygems
+# this code is designed for the following XBee modules:
+# IEEE® 802.15.4 OEM RF Modules by Digi International
+# Series 1 XBee and XBee Pro modules
+#
+# == Copyright
+# Copyright (C) 2008-2009 360VL, Inc. and Landon Cox
+#
+# == License
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License version 3 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License version 3 for more details.
+#
+# You should have received a copy of the GNU Affero General Public License along with this program.
+# If not, see http://www.gnu.org/licenses/
+#
+# == See Also
+# xbeeinfo.rb, xbeeconfigure.rb, xbeedio.rb, xbeelisten.rb, xbeesend.rb
+#
+# == Learn more
+# You can learn more about Ruby::XBee and other projects at http://sawdust.see-do.org
+#
+# see Digi product manual: "Product Manual v1.xCx - 802.15.4 Protocol"
+# for details on the operation of XBee series 1 modules.
+
+require 'ruby_xbee'
+require 'thor'
+
+STDIN.sync = 1
+STDOUT.sync = 1
+$stdin.sync = true
+$stdout.sync = true
+
+module XBee
+  class XBeeCliApp < Thor
+    extend Config
+
+    def self.required_shared_options
+      method_option :device, required: true, aliases: '-d', desc: 'usb device to use (eg /dev/tty.usbserial-A603HAEK)'
+    end
+
+    def self.shared_options
+      required_shared_options
+      method_option :baud_rate, aliases: '-b', default: config_default(:baud_rate), desc: 'baud rate'
+      method_option :data_bits, default: config_default(:data_bits), desc: ''
+      method_option :stop_bits, default: config_default(:stop_bits), desc: ''
+      method_option :parity, default: config_default(:parity), desc: ''
+    end
+  end
+end
+
+# load commands
+require_rel '../lib/commands'
+
+# boot app
+XBee::XBeeCliApp.start

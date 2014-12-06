@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # == Synposis
 # xbeelisten.rb - A ruby utility for listening to data output from an XBee
 #
@@ -48,67 +47,21 @@
 # IEEE® 802.15.4 OEM RF Modules by Digi International
 #
 
-$: << File.dirname(__FILE__)
+module XBee
+  class XBeeCliApp < Thor
+    desc 'listen [-b <baud_rate>]',
+      ''
+    shared_options
+    def listen
+      # start a connection to the XBee
+      xbee = XBee.new(options[:device], options[:baud_rate],
+                      options[:data_bits], options[:stop_bits],
+                      options[:parity])
 
-require 'date'
-require 'getoptlong'
-
-require 'ruby-xbee'
-
-def dump_help
-
-  puts "xbeelisten.rb [options]"
-  puts "Options:"
-
-  puts "   [--dev device] [-d device]                use this device to talk to XBee (ie: /dev/tty.usb-791jdas)"
-  puts "   [--baud new_baud_rate] [-b new_baud_rate] sets the baud rate with which to talk to the device"    # override baud
-  puts "   [--help] print this command help message"
-
-  puts "\nSee conf/config.rb for defaults and edit conf/config.rb to change the defaults used to communicate with the device"
-  puts "License: GNU Affero General Public License version 3"
-  puts "Copyright (C) 2008-2009 360VL, Inc"
-  puts "Copyright (C) 2008-2009 Landon Cox"
-
-end
-
-options = GetoptLong.new()
-options.quiet = true
-
-options_array = Array.new
-
-options_array << [ "--dev", "-d", GetoptLong::REQUIRED_ARGUMENT ]      # override serial /dev string
-options_array << [ "--baud", "-b", GetoptLong::REQUIRED_ARGUMENT ]     # override baud
-options_array << [ "--help", "-h", GetoptLong::NO_ARGUMENT ]           # write new configuration to XBee flash
-
-options.set_options( *options_array )
-
-options.each do | opt, arg |
-
-    case opt
-
-    when "--dev"
-      @xbee_usbdev_str = arg
-
-    when "--baud"
-      @xbee_baud = arg
-
-    when "--help"
-      dump_help
-      exit 0
-
-    when "--save"
-      @save = true
-
+      # read XBee output forever
+      while(true)
+        xbee.getresponse true
+      end
     end
-
+  end
 end
-
-# start a connection to the XBee
-@xbee = XBee.new( @xbee_usbdev_str, @xbee_baud, @data_bits, @stop_bits, @parity )
-
-# read XBee output forever
-while( 1 )
-  @xbee.getresponse true
-end
-
-

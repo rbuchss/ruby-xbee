@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-#
 # == Synopsis
 # xbeeconfigure.rb - A utility for configuring an XBee using Ruby and the Ruby::XBee class
 #
@@ -71,13 +69,6 @@
 # see Digi product manual: "Product Manual v1.xCx - 802.15.4 Protocol"
 # for details on the operation of XBee series 1 modules.
 
-$: << File.dirname(__FILE__)
-
-require 'date'
-require 'getoptlong'
-
-require 'ruby-xbee'
-
 @xbee_config_version = "xbeeconfig 1.0"
 
 =begin rdoc
@@ -109,155 +100,80 @@ def dump_help
 
 end
 
-=begin rdoc
-  configure the command line parameters to accept
-=end
-def setup_cli_options
+module XBee
+  class XBeeCliApp < Thor
+    desc 'configure [-b <baud_rate>]',
+      ''
+    shared_options
+    method_option :panid, aliases: '-p', required: true    # set panid
+    method_option :nodeid, aliases: '-n', required: true   # set nodeid
+    method_option :desthigh, aliases: '-H', required: true # set destination high address
+    method_option :destlow, aliases: '-L', required: true  # set destination low address
+    method_option :channel, aliases: '-c', required: true  # set channel
+    method_option :parity, aliases: '-P', required: true   # set parity
+    # TODO remove
+    method_option :newbaud, aliases: '-B', required: true  # set new baud rate in XBee, will not take effect until exiting command mode or AT command mode timeout
+    method_option :mysrc, aliases: '-M', required: true    # set nodeid
+    method_option :save, aliases: '-s' # GetoptLong::NO_ARGUMENT ]           # write new configuration to XBee flash when finished
+    def configure
+      # start the configuration
+      xbee = XBee.new(options[:device], options[:baud_rate],
+                      options[:data_bits], options[:stop_bits],
+                      options[:parity])
 
-  @options = GetoptLong.new()
-  @options.quiet = true
+      # before doing anything else, put XBee into AT command mode
+      puts "Attention..."
+      if !xbee.attention.match("OK")
+        puts "Can't talk to XBee.  Please check your connection or configuration: #{res}"
+        exit 1
+      end
 
-  @options_array = Array.new
+      # execute configuration
+      if options[:panid]
+        puts "Setting PAN ID"
+        xbee.pan_id!(options[:panid])
+        puts "PAN id: #{xbee.pan_id}"
+      end
 
-  @options_array << [ "--panid", "-p", GetoptLong::REQUIRED_ARGUMENT ]    # set panid
-  @options_array << [ "--nodeid", "-n", GetoptLong::REQUIRED_ARGUMENT ]   # set nodeid
-  @options_array << [ "--desthigh", "-H", GetoptLong::REQUIRED_ARGUMENT ] # set destination high address
-  @options_array << [ "--destlow", "-L", GetoptLong::REQUIRED_ARGUMENT ]  # set destination low address
-  @options_array << [ "--channel", "-c", GetoptLong::REQUIRED_ARGUMENT ]  # set channel
-  @options_array << [ "--parity", "-P", GetoptLong::REQUIRED_ARGUMENT ]   # set parity
-  @options_array << [ "--newbaud", "-B", GetoptLong::REQUIRED_ARGUMENT ]  # set new baud rate in XBee, will not take effect until exiting command mode or AT command mode timeout
-  @options_array << [ "--mysrc", "-M", GetoptLong::REQUIRED_ARGUMENT ]    # set nodeid
+      if options[:mysrc]
+        puts "Setting MY 16-bit source address"
+        xbee.my_src_address!(options[:mysrc].upcase)
+      end
 
-  @options_array << [ "--dev", "-d", GetoptLong::REQUIRED_ARGUMENT ]      # override serial /dev string
-  @options_array << [ "--baud", "-b", GetoptLong::REQUIRED_ARGUMENT ]     # use this baud to configure device
-  @options_array << [ "--save", "-s", GetoptLong::NO_ARGUMENT ]           # write new configuration to XBee flash when finished
-  @options_array << [ "--help", "-h", GetoptLong::NO_ARGUMENT ]           # help message
-  @options_array << [ "--version", "-v", GetoptLong::NO_ARGUMENT ]        # get version of xbeeconfig.rb
+      if options[:nodeid]
+        puts "Setting Node ID"
+        xbee.node_id!(options[:nodeid])
+      end
 
-  @options.set_options( *@options_array )
+      if options[:desthigh] && options[:destlow]
+        puts "Setting destination address"
+        xbee.destination_high!(options[:desthigh])
+        xbee.destination_low!(options[:destlow])
+      end
+
+      if options[:channel]
+        puts "Setting channel"
+        xbee.channel!(options[:channel])
+        puts "Channel: #{xbee.channel}"
+      end
+
+      if options[:baud_rate]
+        puts "Setting new baud rate"
+        xbee.baud!(options[:baud_rate])
+      end
+
+      if options[:newparity]
+        puts "Setting new parity"
+        xbee.parity!(options[:newparity].upcase.to_sym)
+      end
+
+      if options[:save]
+        puts "Saving configuration to XBee flash"
+        xbee.save!
+      end
+
+      puts "Exiting AT command mode"
+      xbee.exit_command_mode
+    end
+  end
 end
-
-=begin rdoc
-  process the command line interface options and set the appropriate variables with the cli data
-=end
-def process_cli_options
-
-  @options.each do | opt, arg |
-
-      case opt
-
-      when "--panid"
-        @panid = arg
-
-      when "--nodeid"
-        @nodeid = arg
-
-      when "--mysrc"
-        @mysrc = arg
-
-      when "--dev"
-        @xbee_usbdev_str = arg
-
-      when "--baud"
-        @xbee_baud = arg
-
-      when "--newbaud"
-        @new_baud_rate = arg
-
-      when "--desthigh"
-        @dest_high = arg
-
-      when "--destlow"
-        @dest_low = arg
-
-      when "--channel"
-        @channel = arg
-
-      when "--parity"
-        @newparity = arg
-
-      when "--help"
-        dump_help
-        exit 0
-
-      when "--version"
-        puts @xbeeconfig_version
-        exit 0
-
-      when "--save"
-        @save = true
-
-      end # case
-  end # options
-end
-
-=begin rdoc
-  after the cli options have been processed, the configuration is executed
-=end
-def execute_configuration
-  # start the configuration
-
-  @xbee = XBee.new( @xbee_usbdev_str, @xbee_baud, @data_bits, @stop_bits, @parity )
-
-  # before doing anything else, put XBee into AT command mode
-
-  puts "Attention..."
-  if !@xbee.attention.match("OK")
-     puts "Can't talk to XBee.  Please check your connection or configuration: #{res}"
-     exit 1
-  end
-
-  # execute configuration
-
-  if @panid
-    puts "Setting PAN ID"
-    @xbee.pan_id!(@panid)
-    puts "PAN id: #{@xbee.pan_id}"
-  end
-
-  if @mysrc
-    puts "Setting MY 16-bit source address"
-    @xbee.my_src_address!( @mysrc.upcase )
-  end
-
-  if @nodeid
-    puts "Setting Node ID"
-    @xbee.node_id!(@nodeid)
-  end
-
-  if @dest_high && @dest_low
-    puts "Setting destination address"
-    @xbee.destination_high!(@dest_high)
-    @xbee.destination_low!(@dest_low)
-  end
-
-  if @channel
-    puts "Setting channel"
-    @xbee.channel!(@channel)
-    puts "Channel: #{@xbee.channel}"
-  end
-
-  if @new_baud_rate
-    puts "Setting new baud rate"
-    @xbee.baud!(new_baud_rate)
-  end
-
-  if @newparity
-    puts "Setting new parity"
-    @xbee.parity!( @newparity.upcase.to_sym )
-  end
-
-  if @save
-    puts "Saving configuration to XBee flash"
-    @xbee.save!
-  end
-
-  puts "Exiting AT command mode"
-  @xbee.exit_command_mode
-
-end
-
-setup_cli_options
-process_cli_options
-execute_configuration
-

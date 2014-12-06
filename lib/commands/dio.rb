@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # == Synopsis
 # xbeedio.rb - A Ruby utility for reading DIO port configuration and sample data
 #
@@ -55,35 +54,41 @@
 # see Digi product manual: "Product Manual v1.xCx - 802.15.4 Protocol"
 # for details on the operation of XBee series 1 modules.
 
-$: << File.dirname(__FILE__)
+module XBee
+  class XBeeCliApp < Thor
+    desc 'dio [-b <baud_rate>]',
+      ''
+    shared_options
+    def dio
+      # start a connection to the XBee
+      xbee = XBee.new(options[:device], options[:baud_rate],
+                      options[:data_bits], options[:stop_bits],
+                      options[:parity])
 
-require 'date'
-require 'ruby-xbee'
-require 'pp'
+      puts "Attention: #{xbee.attention}"
 
-@xbee = XBee.new( @xbee_usbdev_str, @xbee_baud, @data_bits, @stop_bits, @parity )
+      0.upto(8) do |num|
+        portsym = "D#{num}".to_sym
+        puts "Port #{num}: #{xbee.dio( portsym )}"
+      end
 
-puts "Attention: #{@xbee.attention}"
+      puts "DIO inputs:"
+      results = xbee.io_input
+      if ( !results.nil? && results[:ERROR].nil? )
+        puts "Number of Samples: #{results[:NUM]}"
+        puts "Channel mask: #{results[:CM]}"
+        puts "DIO data: #{results[:DIO]}"
 
-0.upto(8) do | num |
-  portsym = "D#{num}".to_sym
-  puts "Port #{num}: #{@xbee.dio( portsym )}"
-end
-
-puts "DIO inputs:"
-results = @xbee.io_input
-if ( !results.nil? && results[:ERROR].nil? )
-  puts "Number of Samples: #{results[:NUM]}"
-  puts "Channel mask: #{results[:CM]}"
-  puts "DIO data: #{results[:DIO]}"
-
-  # up to 6 lines (ADC0-ADC5) of ADC could be present if all enabled
-  0.upto(5) do | adc_channel |
-    adcsym = "ADC#{adc_channel}".to_sym
-    if ( !results[adcsym].nil? )
-       puts "ADC#{adc_channel} data: #{results[adcsym]}"
+        # up to 6 lines (ADC0-ADC5) of ADC could be present if all enabled
+        0.upto(5) do |adc_channel|
+          adcsym = "ADC#{adc_channel}".to_sym
+          if ( !results[adcsym].nil? )
+            puts "ADC#{adc_channel} data: #{results[adcsym]}"
+          end
+        end
+      else
+        puts "No DIO input data to report"
+      end
     end
   end
-else
-  puts "No DIO input data to report"
 end

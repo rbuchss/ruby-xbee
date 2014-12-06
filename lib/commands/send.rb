@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # == Synposis
 # xbeesend.rb - A Ruby utility for sending raw data to and through an XBee
 #
@@ -57,25 +56,29 @@
 # for details on the operation of XBee series 1 modules.
 #
 
-$: << File.dirname(__FILE__)
+module XBee
+  class XBeeCliApp < Thor
+    desc 'send [-b <baud_rate>]',
+      ''
+    shared_options
+    def send
+      # start a connection to the XBee
+      xbee = XBee.new(options[:device], options[:baud_rate],
+                      options[:data_bits], options[:stop_bits],
+                      options[:parity])
 
-require 'date'
-require 'getoptlong'
-
-require 'ruby-xbee'
-
-# start a connection to the XBee
-@xbee = XBee.new( @xbee_usbdev_str, @xbee_baud, @data_bits, @stop_bits, @parity )
-
-if ( ARGV.size > 0 )
-  ARGV.each do | message |
-    puts "Sending: #{message}"
-    @xbee.send! message
-  end
-else  # take input from STDIN to make it interactive
-  while true
-    message = gets
-    @xbee.send! message
+      # TODO fix
+      if (ARGV.size > 0)
+        ARGV.each do |message|
+          puts "Sending: #{message}"
+          xbee.send! message
+        end
+      else  # take input from STDIN to make it interactive
+        while true
+          message = gets
+          xbee.send! message
+        end
+      end
+    end
   end
 end
-
