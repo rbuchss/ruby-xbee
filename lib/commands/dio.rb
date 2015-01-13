@@ -56,38 +56,39 @@
 
 module XBee
   class XBeeCliApp < Thor
-    desc 'dio [-b <baud_rate>]',
-      ''
+    desc 'dio [-b <baud_rate>] [--data-bits] [--stop-bits] [--parity]',
+      'utility for configuring and manipulating XBee DIO ports'
     shared_options
     def dio
       # start a connection to the XBee
-      xbee = XBee.new(options[:device], options[:baud_rate],
+      device = options[:device] || USB.prompt_for_device
+      xbee = XBee.new(device, options[:baud_rate],
                       options[:data_bits], options[:stop_bits],
                       options[:parity])
 
-      puts "Attention: #{xbee.attention}"
+      logger.info "Attention: #{xbee.attention}"
 
       0.upto(8) do |num|
         portsym = "D#{num}".to_sym
-        puts "Port #{num}: #{xbee.dio( portsym )}"
+        logger.info "Port #{num}: #{xbee.dio(portsym)}"
       end
 
-      puts "DIO inputs:"
+      logger.info "DIO inputs:"
       results = xbee.io_input
-      if ( !results.nil? && results[:ERROR].nil? )
-        puts "Number of Samples: #{results[:NUM]}"
-        puts "Channel mask: #{results[:CM]}"
-        puts "DIO data: #{results[:DIO]}"
+      if results and results[:ERROR].nil?
+        logger.info "Number of Samples: #{results[:NUM]}" \
+        "Channel mask: #{results[:CM]}" \
+        "DIO data: #{results[:DIO]}"
 
         # up to 6 lines (ADC0-ADC5) of ADC could be present if all enabled
         0.upto(5) do |adc_channel|
           adcsym = "ADC#{adc_channel}".to_sym
-          if ( !results[adcsym].nil? )
-            puts "ADC#{adc_channel} data: #{results[adcsym]}"
+          if results[adcsym]
+            logger.info "ADC#{adc_channel} data: #{results[adcsym]}"
           end
         end
       else
-        puts "No DIO input data to report"
+        logger.info "No DIO input data to report"
       end
     end
   end

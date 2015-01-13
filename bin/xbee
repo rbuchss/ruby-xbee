@@ -40,9 +40,10 @@ $stdout.sync = true
 module XBee
   class XBeeCliApp < Thor
     extend Config
+    include Logging
 
     def self.required_shared_options
-      method_option :device, required: true, aliases: '-d', desc: 'usb device to use (eg /dev/tty.usbserial-A603HAEK)'
+      method_option :device, aliases: '-d', desc: 'usb device to use (eg /dev/tty.usbserial-A603HAEK)'
     end
 
     def self.shared_options

@@ -10,7 +10,8 @@ Gem::Specification.new do |s|
   s.email         = %w(exile@chamber.ee)
   s.date          = '2014-03-09'
   s.description   = 'A Ruby XBee gem'
-  s.summary       = 'Controlling an XBee module from Ruby either in AT (Transparent) or API mode. Both Series 1 and Series 2 radio modules are supported.'
+  s.summary       = 'Controlling an XBee module from Ruby either in AT (Transparent) or API mode. ' \
+    'Both Series 1 and Series 2 radio modules are supported.'
   s.homepage      = 'http://github.com/exsilium/ruby-xbee'
   s.licenses      = 'AGPL'
 
@@ -29,8 +30,12 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'bundler', '~> 1.3'
   s.add_development_dependency 'rake', '~> 10.3'
+  s.add_development_dependency 'rspec', '~> 2.14'
+  s.add_development_dependency 'simplecov', '~> 0.8'
+  s.add_development_dependency 'reek', '~> 1.5'
 
   s.add_runtime_dependency 'serialport', '~> 1.1'
   s.add_runtime_dependency 'require_all', '~> 1.3'
   s.add_runtime_dependency 'thor', '~> 0.19'
+  s.add_runtime_dependency 'highline', '~> 1.6'
 end

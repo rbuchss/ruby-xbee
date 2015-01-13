@@ -35,6 +35,7 @@ require 'yaml'
 require 'rubygems'
 require 'serialport'
 require 'require_all'
+require 'highline/import'
 
 require_rel 'xbee'
 

@@ -1,5 +1,6 @@
 module XBee
   class BaseCommandModeInterface < RFModule
+    include Logging
 
     VERSION = "1.0" # Version of this class
 
@@ -450,37 +451,39 @@ module XBee
 
       @xbee_serialport.write("ATIS\r")
       response = getresponse
-      linenum = 1
-      adc_sample = 1
-      samples = Hash.new
+      if response
+        linenum = 1
+        adc_sample = 1
+        samples = Hash.new
 
-      if response.match("ERROR")
-        samples[:ERROR] = "ERROR"
-        return samples
-      end
-
-      # otherwise parse input data
-      response.each_line do | line |
-        case linenum
-        when 1
-          samples[:NUM] = line.to_i
-        when 2
-          samples[:CM] = line.strip.chomp if line
-        when 3
-          samples[:DIO] = line.strip.chomp if line
-        else
-          sample = line.strip.chomp if line
-          if ( !sample.nil? && sample.size > 0 )
-            samples["ADC#{adc_sample}".to_sym] = line.strip.chomp if line
-            adc_sample += 1
-          end
+        if response.match("ERROR")
+          samples[:ERROR] = "ERROR"
+          return samples
         end
 
-        linenum += 1
-      end
+        # otherwise parse input data
+        response.each_line do | line |
+          case linenum
+          when 1
+            samples[:NUM] = line.to_i
+          when 2
+            samples[:CM] = line.strip.chomp if line
+          when 3
+            samples[:DIO] = line.strip.chomp if line
+          else
+            sample = line.strip.chomp if line
+            if ( !sample.nil? && sample.size > 0 )
+              samples["ADC#{adc_sample}".to_sym] = line.strip.chomp if line
+              adc_sample += 1
+            end
+          end
 
-      @xbee_serialport.read_timeout = tmp
-      samples
+          linenum += 1
+        end
+
+        @xbee_serialport.read_timeout = tmp
+        samples
+      end
     end
 
 =begin rdoc
